@@ -45,7 +45,16 @@ pub mod todo_sol{
         Ok(())
 
     }
+
     //mark a todo
+    pub fn mark_todo(ctx:Context<MarkTodo>,todo_idx:u8) -> Result<()> {
+        let todo_account = &mut ctx.accounts.todo_account;
+        require!(!todo_account.marked,TodoError::AlreadyMarked);
+
+        todo_account.marked = true;
+
+        Ok(())
+    }
     //remove data from chain
 }
 
@@ -95,4 +104,30 @@ pub struct AddTodo<'info>{
     pub todo_account:Box<Account<'info,TodoAccount>>,
 
     pub system_program:Program<'info,System>
+}
+
+#[derive(Accounts)]
+#[instruction(todo_idx:u8)]
+pub struct MarkTodo<'info>{
+
+    #[account(
+        mut,
+        seeds=[USER_TAG,authority.key().as_ref()],
+        bump,
+        has_one=authority
+    )]
+    pub user_profile:Box<Account<'info,UserProfile>>,
+
+    #[account(
+        mut,
+        seeds=[TODO_TAG,authority.key().as_ref(),&[todo_idx].as_ref()],
+        bump,
+        has_one=authority
+    )]
+    pub todo_account:Box<Account<'info,TodoAccount>>,
+
+    #[account(mut)]
+    pub authority:Signer<'info>,
+
+    pub system_program : Program<'info,System>
 }
