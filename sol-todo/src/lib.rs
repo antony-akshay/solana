@@ -40,7 +40,7 @@ pub struct InitializeUser<'info>{
         seeds=[USER_TAG,authority.key().as_ref()],
         bump,
         payer=authority,
-        space = std::mem::size_of::<UserProfile>(),
+        space =8 + std::mem::size_of::<UserProfile>(), //can cause deserialization errors-account descriminator
     )]
     pub user_profile: Box<Account<'info,UserProfile>>,  //box is a space in memory holding the data
 
