@@ -24,6 +24,27 @@ pub mod todo_sol{
     }
 
     //add  a todo to chain
+    pub fn add_todo(ctx:Context<AddTodo>,_content:String) ->Result<()> {
+        let todo_account= &mut ctx.accounts.todo_account;
+        let user_profile = &mut ctx.accounts.user_profile;
+
+        todo_account.authority=ctx.accounts.authority.key();
+        todo_account.content=_content;
+        todo_account.marked=false;
+        todo_account.idx = user_profile.last_todo;
+
+        //increment user last_todo and todo_count
+        user_profile.last_todo = user_profile.last_todo
+        .checked_add(1)
+        .unwrap();
+
+        user_profile.todo_count = user_profile.todo_count
+        .checked_add(1)
+        .unwrap();
+
+        Ok(())
+
+    }
     //mark a todo
     //remove data from chain
 }
@@ -46,4 +67,32 @@ pub struct InitializeUser<'info>{
 
     pub system_program:Program<'info,System>
 
+}
+
+#[derive(Accounts)]
+#[instruction()]
+pub struct AddTodo<'info>{
+
+
+    #[account(
+        mut,
+        seeds=[USER_TAG,authority.key().as_ref()],
+        bump,
+        has_one=authority
+    )]
+    pub user_profile:Box<Account<'info,UserProfile>>,
+
+    #[account(mut)]
+    pub authority:Signer<'info>,
+
+    #[account(
+        init,
+        seeds=[TODO_TAG,authority.key().as_ref(),&[user_profile.last_todo as u8].as_ref()],
+        bump,
+        payer=authority,
+        space=8 + std::mem::size_of::<TodoAccount>(),
+    )]
+    pub todo_account:Box<Account<'info,TodoAccount>>,
+
+    pub system_program:Program<'info,System>
 }
