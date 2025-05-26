@@ -55,7 +55,20 @@ pub mod todo_sol{
 
         Ok(())
     }
+
     //remove data from chain
+    pub fn remove_todo(ctx:Context<RemoveTodo>,todo_idx:u8) -> Result<()> {
+        //decrement the total_todo_count
+        let user_profile = &mut ctx.accounts.user_account;
+        user_profile.todo_count = user_profile.todo_count
+        .checked_sub(1)
+        .unwrap();
+        
+        //no need to decrease last todo index
+        //todo's PDA is actually closed in context
+
+        Ok(())
+    }
 }
 
 #[derive(Accounts)]
@@ -130,4 +143,31 @@ pub struct MarkTodo<'info>{
     pub authority:Signer<'info>,
 
     pub system_program : Program<'info,System>
+}
+
+#[derive(Accounts)]
+#[instruction(todo_idx:u8)]
+pub struct RemoveTodo<'info>{
+
+    #[account(
+        mut,
+        seeds=[USER_TAG,authority.key().as_ref()],
+        bump,
+        has_one=authority
+    )]
+    pub user_account:Box<Account<'info,UserProfile>>,
+
+    #[account(
+        mut,
+        close=authority,
+        seeds=[TODO_TAG,authority.key().as_ref(),&[todo_idx].as_ref()],
+        bump,
+        has_one=authority
+    )]
+    pub todo_account:Box<Account<'info,TodoAccount>>,
+
+    #[account(mut)]
+    pub authority:Signer<'info>,
+
+    pub system_program:Program<'info,System>
 }
