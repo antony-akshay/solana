@@ -32,8 +32,8 @@ pub mod todo_sol{
 #[instruction()]
 pub struct InitializeUser<'info>{
 
-    #[acccount(mut)]
-    pub authority:Signer<'info>
+    #[account(mut)]
+    pub authority:Signer<'info>,
 
     #[account(
         init,
@@ -42,7 +42,7 @@ pub struct InitializeUser<'info>{
         payer=authority,
         space = std::mem::size_of::<UserProfile>(),
     )]
-    pub user_profile: Box<Account<'info,UserProfile>>  //box is a space in memory holding the data
+    pub user_profile: Box<Account<'info,UserProfile>>,  //box is a space in memory holding the data
 
     pub system_program:Program<'info,System>
 
