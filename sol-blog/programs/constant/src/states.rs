@@ -19,4 +19,4 @@ pub struct PostAccount{
     pub content:String, // 4 + 1024
     pub user:Pubkey, //32
     pub authority:Pubkey //32
-}
+} 

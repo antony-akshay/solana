@@ -4,4 +4,4 @@ use anchor_lang::prelude::*;
 pub const USER_SEED: &[u8] = b"user_v4";
 
 #[constant]
-pub const POST_SEED: &[u8] = b"post";
+pub const POST_SEED: &[u8] = b"post"; 
