@@ -1,9 +1,0 @@
-# Ignore specific files/folders only inside blueshift_vault
-
-blueshift_vault/.anchor
-blueshift_vault/.DS_Store
-blueshift_vault/target
-blueshift_vault/**/*.rs.bk
-blueshift_vault/node_modules
-blueshift_vault/test-ledger
-blueshift_vault/.yarn
