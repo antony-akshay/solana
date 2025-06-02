@@ -13,9 +13,15 @@ pub mod blueshift_anchor_vault {
     }
 
     pub fn deposit(ctx:Context<VaultAction>,amount:u64) ->Result<()> {
+        //intented for single deposit only and each vault account is binded to a user's acc
+        //check if the vault balance is empty : intitial supposed to be 0
         require_eq!(ctx.accounts.vault.lamports(),0,VaultError::VaultAlreadyExists);
+        //check if the the amount is greater enough to meet the rent for the account
         require_gt!(amount,Rent::get()?.minimum_balance(0),VaultError::InvalidAmount);
-
+        
+        
+        //transfer logic 
+        //from user to vaultaccount
         transfer(
             CpiContext::new(
                 ctx.accounts.system_program.to_account_info(),
@@ -33,7 +39,12 @@ pub mod blueshift_anchor_vault {
     pub fn withdraw(ctx:Context<VaultAction>) -> Result<()>{
         let binding = ctx.accounts.signer.key();
         let signer_seeds = &[b"vault",binding.as_ref(),&[ctx.bumps.vault]];
-
+        
+        //PDA has no private key ,so we sign this transcation using seeds used to generate
+        //that PDA
+        //withdraw the balance from vault to user's account
+        //here sender is  a PDA
+        //we rederive the PDA here using the seeds
 
         transfer(
             CpiContext::new_with_signer(
@@ -58,7 +69,8 @@ pub struct Initialize {}
 pub struct VaultAction<'info>{
     #[account(mut)]
     pub signer:Signer<'info>,
-
+    
+    //all controlled by system program
     #[account(
         mut,
         seeds=[b"vault",signer.key().as_ref()],
@@ -69,6 +81,7 @@ pub struct VaultAction<'info>{
     pub system_program:Program<'info,System>
 }
 
+//custom errors
 #[error_code]
 pub enum VaultError{
     #[msg("Vault already exists")]
@@ -77,3 +90,5 @@ pub enum VaultError{
     #[msg("Invalid amount")]
     InvalidAmount
 }
+
+//use cpi to access the system program to run the transaction
