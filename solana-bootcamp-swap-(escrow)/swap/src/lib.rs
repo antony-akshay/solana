@@ -21,7 +21,14 @@ pub mod swap {
         token_a_offered_amount: u64,
         token_b_wanted_amount: u64,
     ) -> Result<()> {
+        //folder::filename::fn_used
         instructions::make_offer::send_offered_tokens_to_vault(&context, token_a_offered_amount)?;
         instructions::make_offer::save_offer(context, id, token_b_wanted_amount)
+    }
+
+    pub fn take_offer(context: Context<TakeOffer1>) -> Result<()> {
+        instructions::take_offer::send_wanted_tokens_to_maker(&context)?;
+        instructions::take_offer::withdraw_and_close_vault(&context)?;
+        Ok(())
     }
 }
