@@ -1,11 +1,9 @@
-use anchor_lang::{accounts::account_info, prelude::*};
+use anchor_lang::{prelude::*};
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token::Token,
-    token_interface::{Mint, TokenAccount, TokenInterface},
+    token_interface::{Mint, TokenAccount, TokenInterface}, // Changed: use token_interface types
 };
-use crate::state::Offer; 
-
+use crate::state::Offer;
 use crate::{instructions::transfer_tokens, ANCHOR_DISCRIMINATOR};
 
 #[derive(Accounts)]
@@ -62,7 +60,7 @@ pub fn send_offered_tokens_to_vault(
         &context.accounts.token_mint_a,
         &context.accounts.maker,
         &context.accounts.token_program,
-    );
+    )?;
     Ok(())
 }
 
