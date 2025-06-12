@@ -124,7 +124,7 @@ pub fn withdraw_and_close_vault(ctx: &Context<TakeOffer1>) -> Result<()> {
     let accounts = CloseAccount {
         account: ctx.accounts.vault.to_account_info(),
         destination: ctx.accounts.taker.to_account_info(),
-        authority: ctx.accounts.vault.to_account_info(),
+        authority: ctx.accounts.offer.to_account_info(),
     };
 
     let cpi_context = CpiContext::new_with_signer(
