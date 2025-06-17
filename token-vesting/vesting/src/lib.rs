@@ -10,7 +10,7 @@ pub mod vesting {
     use super::*;
 
     //initialise vesting contract
-    //give emplyee ability to add employees
+    //give employer ability to add employees
     //allow employees to claim the vested tokens
 
     pub fn create_vesting_account(
@@ -20,10 +20,24 @@ pub mod vesting {
         *ctx.accounts.vesting_account = VestingAccount {
             owner: ctx.accounts.signer.key(),
             mint: ctx.accounts.mint.key(),
-            treasury_token_account:ctx.accounts.treasury_token_account.key(),
+            treasury_token_account: ctx.accounts.treasury_token_account.key(),
             company_name,
             treasury_bump: ctx.bumps.treasury_token_account,
             bump: ctx.bumps.vesting_account,
+        };
+        Ok(())
+    }
+
+    pub fn create_employee_account(ctx:Context<CreateEmployeeAccount>,start_time:i64,end_time:i64,total_amount:u64,cliff_time:i64) -> Result<()> {
+        *ctx.accounts.employee_account = EmployeeAccount{ 
+            beneficery: ctx.accounts.beneficery.key(), 
+            start_time: start_time, 
+            end_time: end_time,
+            cliff_time: cliff_time,
+            vesting_account: ctx.accounts.vesting_account.key(),
+            total_amount: total_amount,
+            total_withdraw: 0 ,
+            bump:ctx.bumps.employee_account
         };
         Ok(())
     }
@@ -70,4 +84,43 @@ pub struct VestingAccount {
     pub company_name: String,
     pub treasury_bump: u8,
     pub bump: u8,
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct EmployeeAccount {
+    pub beneficery: Pubkey,
+    pub start_time: i64,
+    pub end_time: i64,
+    pub cliff_time: i64,
+    pub vesting_account: Pubkey,
+    pub total_amount: u64,
+    pub total_withdraw: u64,
+    pub bump:u8
+}
+
+
+
+#[derive(Accounts)]
+pub struct CreateEmployeeAccount<'info>{
+    #[account(mut)]
+    pub owner:Signer<'info>,
+
+    pub beneficery:SystemAccount<'info>,
+
+    #[account(
+        has_one=owner //owner if vesting acc is the signer of this instruction
+    )]
+    pub vesting_account:Account<'info,VestingAccount>,
+
+    #[account(
+        init,
+        payer = owner,
+        space = ANCHOR_DISCRIMINATOR_SIZE + EmployeeAccount::INIT_SPACE,
+        seeds=[b"employee_vesting",beneficery.key().as_ref(),vesting_account.key().as_ref()],
+        bump
+    )]
+    pub employee_account:Account<'info,EmployeeAccount>,
+
+    pub system_program:Program<'info,System>
 }
