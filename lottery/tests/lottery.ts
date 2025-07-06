@@ -1,6 +1,7 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { Lottery } from "../target/types/lottery";
+import { TOKEN_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
 
 describe("lottery", () => {
   const provider = anchor.AnchorProvider.env();
@@ -11,7 +12,7 @@ describe("lottery", () => {
 
   const program = anchor.workspace.lottery as Program<Lottery>;
 
-  it("Is initialized!", async () => {
+  it("should init", async () => {
     const intiConfigTx = await program.methods.initializeConfig(
       new anchor.BN(0),
       new anchor.BN(1722712025),
@@ -21,14 +22,31 @@ describe("lottery", () => {
     const blockhashWithContext = await provider.connection.getLatestBlockhash();
 
     const tx = new anchor.web3.Transaction({
-      feePayer:provider.wallet.publicKey,
-      blockhash:blockhashWithContext.blockhash,
-      lastValidBlockHeight:blockhashWithContext.lastValidBlockHeight
+      feePayer: provider.wallet.publicKey,
+      blockhash: blockhashWithContext.blockhash,
+      lastValidBlockHeight: blockhashWithContext.lastValidBlockHeight
     }).add(intiConfigTx)
     console.log("Your transaction signature", tx);
 
-    const signature = await anchor.web3.sendAndConfirmTransaction(provider.connection,tx,[wallet.payer]);
+    const signature = await anchor.web3.sendAndConfirmTransaction(provider.connection, tx, [wallet.payer]);
 
-    console.log("transaction signature:",signature);
+    console.log("transaction signature:", signature);
+
+    const initLotteryIx = await program.methods.initializeLottery().accounts({
+      tokenProgram: TOKEN_PROGRAM_ID,
+    }).instruction();
+
+    const initLotteryTx = new anchor.web3.Transaction({
+      feePayer: provider.wallet.publicKey,
+      blockhash: blockhashWithContext.blockhash,
+      lastValidBlockHeight: blockhashWithContext.lastValidBlockHeight
+    }).add(initLotteryIx);
+
+    const initLotterySignature = await anchor.web3.sendAndConfirmTransaction(provider.connection, initLotteryTx, [wallet.payer],);
+
+    console.log("init Lottery Signature:",initLotterySignature);
+    
+
   });
 });
+
