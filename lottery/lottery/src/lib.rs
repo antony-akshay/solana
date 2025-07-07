@@ -55,7 +55,7 @@ pub mod lottery {
                 MintTo {
                     mint: ctx.accounts.collection_mint.to_account_info(),
                     to: ctx.accounts.collection_token_account.to_account_info(),
-                    authority: ctx.accounts.payer.to_account_info(),
+                    authority: ctx.accounts.collection_mint.to_account_info(),
                 },
                 signer_seeds,
             ),
