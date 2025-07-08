@@ -12,7 +12,34 @@ describe("lottery", () => {
 
   const program = anchor.workspace.lottery as Program<Lottery>;
 
-  it("should init", async () => {
+  async function buyTicket() {
+    const buyTicketIx = await program.methods.buyTicket().accounts({
+      tokenProgram:TOKEN_PROGRAM_ID
+    }).instruction();
+
+    const computeIx = anchor.web3.ComputeBudgetProgram.setComputeUnitLimit({
+      units:300000
+    });
+
+    const priorityIx = anchor.web3.ComputeBudgetProgram.setComputeUnitPrice({
+      microLamports:1
+    });
+
+    const blockhashWithContext = await provider.connection.getLatestBlockhash();
+    const tx = new anchor.web3.Transaction({
+      feePayer: provider.wallet.publicKey,
+      blockhash: blockhashWithContext.blockhash,
+      lastValidBlockHeight: blockhashWithContext.lastValidBlockHeight
+    }).add(buyTicketIx).add(computeIx).add(priorityIx);
+
+    const signature = await anchor.web3.sendAndConfirmTransaction(
+      provider.connection,tx,[wallet.payer],{skipPreflight:true}
+    );
+
+    console.log("buy ticket signature:",signature);
+  }
+
+  it("should test token lottery", async () => {
     const intiConfigTx = await program.methods.initializeConfig(
       new anchor.BN(0),
       new anchor.BN(1722712025),
@@ -44,8 +71,9 @@ describe("lottery", () => {
 
     const initLotterySignature = await anchor.web3.sendAndConfirmTransaction(provider.connection, initLotteryTx, [wallet.payer],);
 
-    console.log("init Lottery Signature:",initLotterySignature);
-    
+    console.log("init Lottery Signature:", initLotterySignature);
+
+    await buyTicket();
 
   });
 });
