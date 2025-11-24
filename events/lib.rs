@@ -14,7 +14,7 @@ use anchor_spl::metadata::{
     SetAndVerifySizedCollectionItem, SignMetadata,
 };
 
-declare_id!("FE7JgjkQM1kYQ5DiCiu75VHgUUD5UqZyHxVcyvQNsWSk");
+declare_id!("Count3AcZucFDPSFBAeHkQ6AvttieKUkyJ8HiQGhQwe");
 
 pub const ANCHOR_DISCRIMINATOR_SIZE: usize = 8;
 
@@ -34,8 +34,14 @@ pub mod counter {
         start_time: i64,
         end_time: i64,
         total_attentees: u32,
-        collection_mint:Pubkey
+        collection_mint: Pubkey,
     ) -> Result<()> {
+
+
+        if start_time <= end_time {
+            return Err(ErrorCode::InvalidEventTime.into());
+        }
+
         *ctx.accounts.event_account = Event {
             creator: *ctx.accounts.payer.key,
             name: name,
@@ -184,15 +190,19 @@ pub mod counter {
         };
 
         let event_account: &mut Account<'_, Event> = &mut ctx.accounts.event_account;
-        event_account.registered_attentees =
-            event_account.registered_attentees.checked_add(1).unwrap();
+        event_account.registered_attentees = event_account
+            .registered_attentees
+            .checked_add(1)
+            .ok_or(ErrorCode::OverflowError)?;
         Ok(())
     }
 
     pub fn cancel_registration(ctx: Context<CancelRegistration>) -> Result<()> {
         let event_account = &mut ctx.accounts.event_account;
-        event_account.registered_attentees =
-            event_account.registered_attentees.checked_sub(1).unwrap();
+        event_account.registered_attentees = event_account
+            .registered_attentees
+            .checked_sub(1)
+            .ok_or(ErrorCode::OverflowError)?;
         Ok(())
     }
 
@@ -203,6 +213,18 @@ pub mod counter {
             return Err(ErrorCode::InvalidAttentanceCode.into());
         }
 
+        if ctx.accounts.registration_account.attentence_nft_minted {
+            return Err(ErrorCode::NftAlreadyMinted.into());
+        }
+
+        if clock.unix_timestamp < ctx.accounts.event_account.start_time as i64
+            || clock.unix_timestamp > ctx.accounts.event_account.end_time as i64
+        {
+            return Err(ErrorCode::NotMinitingTime.into());
+        }
+
+        ctx.accounts.registration_account.attentence_nft_minted = true;
+
         let nft_name = ctx.accounts.event_account.name.to_owned()
             + ctx
                 .accounts
@@ -211,12 +233,6 @@ pub mod counter {
                 .to_string()
                 .as_str();
         let nft_uri = ctx.accounts.event_account.url.to_owned();
-
-        if clock.unix_timestamp < ctx.accounts.event_account.start_time as i64
-            || clock.unix_timestamp > ctx.accounts.event_account.end_time as i64
-        {
-            return Err(ErrorCode::NotMinitingTime.into());
-        }
 
         let signer_seeds: &[&[&[u8]]] = &[&[
             b"collection_mint".as_ref(),
@@ -492,7 +508,11 @@ pub struct MintNft<'info> {
     #[account(
         init,
         payer = attentee,
-        seeds = [event_account.total_attentees.to_le_bytes().as_ref()],
+        seeds = [
+            b"nft_mint".as_ref(),
+            event_account.key().as_ref(),
+            attentee.key().as_ref()
+        ],
         bump,
         mint::decimals = 0,
         mint::authority=collection_mint,
@@ -609,4 +629,10 @@ pub enum ErrorCode {
     InvalidAttentanceCode,
     #[msg("minting not reached")]
     NotMinitingTime,
+    #[msg("already minted")]
+    NftAlreadyMinted,
+    #[msg("overflow error")]
+    OverflowError,
+    #[msg("invalid event start or end time")]
+    InvalidEventTime,
 }
